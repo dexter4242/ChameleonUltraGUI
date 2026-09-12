@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -8,6 +9,7 @@ import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
+import 'package:path_provider/path_provider.dart';
 
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
@@ -230,6 +232,40 @@ class MifareClassicRecovery {
           .getMf1StaticEncryptedNestedAcquire(
               sectorCount: mfClassicGetSectorCount(mifareClassicType,
                   isEV1: isMifareClassicEV1));
+
+      // === EXPORT AUTOMAT NONCES PENTRU OFFLINE RECOVERY ===
+      if (backdoorInfo != null) {
+        final buffer = StringBuffer();
+        buffer.writeln(
+            "UID: ${backdoorInfo.$1.toRadixString(16).padLeft(8, '0')}");
+        buffer.writeln("BackdoorKey: ${bytesToHex(backdoorInfo.$4)}");
+        buffer.writeln("");
+
+        for (int sector = 0;
+            sector < backdoorInfo.$2.nonces.length;
+            sector++) {
+          final a = backdoorInfo.$2.nonces[sector];
+          final b = backdoorInfo.$3.nonces[sector];
+
+          buffer.writeln("Sector $sector");
+          buffer.writeln(
+              "A  nt=${a.nt.toRadixString(16).padLeft(8, '0')}  ntEnc=${a.ntEnc.toRadixString(16).padLeft(8, '0')}  par=${a.parity}");
+          buffer.writeln(
+              "B  nt=${b.nt.toRadixString(16).padLeft(8, '0')}  ntEnc=${b.ntEnc.toRadixString(16).padLeft(8, '0')}  par=${b.parity}");
+          buffer.writeln("");
+        }
+
+        try {
+          final directory = await getApplicationDocumentsDirectory();
+          final file = File(
+              '${directory.path}/fudan_nonces_${DateTime.now().millisecondsSinceEpoch}.txt');
+          await file.writeAsString(buffer.toString());
+          appState.log!.i(">>> Nonces exported to: ${file.path}");
+        } catch (e) {
+          appState.log!.e("Failed to export nonces: $e");
+        }
+      }
+      // === END EXPORT ===
     }
 
     DarksideResult darkside = DarksideResult.fixed;
