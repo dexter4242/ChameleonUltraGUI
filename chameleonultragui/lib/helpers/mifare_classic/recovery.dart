@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -253,10 +254,28 @@ class MifareClassicRecovery {
           buffer.writeln("");
         }
 
-        // Printează totul în log ca să poți copia ușor
-        appState.log!.i("========== FUDAN NONCES START ==========");
-        appState.log!.i(buffer.toString());
-        appState.log!.i("========== FUDAN NONCES END ==========");
+        try {
+          // Salvează automat pe Desktop (Windows)
+          final userProfile = Platform.environment['USERPROFILE'] ??
+              Platform.environment['HOME'] ??
+              '.';
+          final desktopPath = '$userProfile\\Desktop';
+          final fileName =
+              'fudan_nonces_${DateTime.now().millisecondsSinceEpoch}.txt';
+          final file = File('$desktopPath\\$fileName');
+          await file.writeAsString(buffer.toString());
+          appState.log!.i(">>> Nonces saved to Desktop: ${file.path}");
+        } catch (e) {
+          // Fallback: salvează în folderul curent
+          try {
+            final file = File(
+                'fudan_nonces_${DateTime.now().millisecondsSinceEpoch}.txt');
+            await file.writeAsString(buffer.toString());
+            appState.log!.i(">>> Nonces saved to: ${file.absolute.path}");
+          } catch (e2) {
+            appState.log!.e("Failed to save nonces file: $e2");
+          }
+        }
       }
       // === END EXPORT ===
     }
