@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -9,7 +8,6 @@ import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/recovery/recovery.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
-import 'package:path_provider/path_provider.dart';
 
 // Recovery
 import 'package:chameleonultragui/recovery/recovery.dart' as recovery;
@@ -255,15 +253,10 @@ class MifareClassicRecovery {
           buffer.writeln("");
         }
 
-        try {
-          final directory = await getApplicationDocumentsDirectory();
-          final file = File(
-              '${directory.path}/fudan_nonces_${DateTime.now().millisecondsSinceEpoch}.txt');
-          await file.writeAsString(buffer.toString());
-          appState.log!.i(">>> Nonces exported to: ${file.path}");
-        } catch (e) {
-          appState.log!.e("Failed to export nonces: $e");
-        }
+        // Printează totul în log ca să poți copia ușor
+        appState.log!.i("========== FUDAN NONCES START ==========");
+        appState.log!.i(buffer.toString());
+        appState.log!.i("========== FUDAN NONCES END ==========");
       }
       // === END EXPORT ===
     }
